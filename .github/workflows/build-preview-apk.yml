@@ -9,6 +9,14 @@ on:
       - 'lib/screens/design_preview_screen.dart'
       - 'lib/design_preview_main.dart'
       - '.github/workflows/build-preview-apk.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'lib/design_system/**'
+      - 'lib/screens/design_preview_screen.dart'
+      - 'lib/design_preview_main.dart'
+      - '.github/workflows/build-preview-apk.yml'
   workflow_dispatch:
 
 permissions:
