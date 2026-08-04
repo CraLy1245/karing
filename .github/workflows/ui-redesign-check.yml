@@ -1,0 +1,77 @@
+name: UI Redesign Check
+
+on:
+  push:
+    branches:
+      - ui-redesign
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout Karing
+        uses: actions/checkout@v4
+        with:
+          path: karing
+
+      - name: Checkout VPN service dependency
+        uses: actions/checkout@v4
+        with:
+          repository: KaringX/vpn-service
+          path: vpn-service
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.35.0
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        working-directory: karing
+        run: flutter pub get
+
+      - name: Check formatting
+        working-directory: karing
+        run: |
+          dart format --output=none --set-exit-if-changed \
+            lib/design_system \
+            lib/design_preview_main.dart \
+            lib/screens/design_preview_screen.dart \
+            lib/screens/theme_data_light.dart \
+            lib/screens/theme_data_dark.dart \
+            lib/screens/theme_define.dart \
+            lib/screens/theme_config.dart \
+            lib/screens/common_widget.dart \
+            lib/screens/group_item_creator.dart \
+            lib/screens/group_item_widgets.dart \
+            lib/screens/listview_multi_parts_builder.dart \
+            lib/screens/widgets/card.dart \
+            lib/screens/widgets/fab2.dart \
+            lib/screens/widgets/sheet.dart
+
+      - name: Analyze design system
+        working-directory: karing
+        run: dart analyze lib/design_system
+
+      - name: Analyze migrated shared UI
+        working-directory: karing
+        run: |
+          dart analyze lib/screens/common_widget.dart
+          dart analyze lib/screens/group_item_creator.dart
+          dart analyze lib/screens/group_item_widgets.dart
+          dart analyze lib/screens/listview_multi_parts_builder.dart
+          dart analyze lib/screens/widgets/card.dart
+          dart analyze lib/screens/widgets/fab2.dart
+          dart analyze lib/screens/widgets/sheet.dart
+          dart analyze lib/screens/theme_data_light.dart
+          dart analyze lib/screens/theme_data_dark.dart
