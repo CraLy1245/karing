@@ -1,0 +1,76 @@
+name: Build FlowTunnel Preview APK
+
+on:
+  push:
+    branches:
+      - ui-redesign
+    paths:
+      - 'lib/design_system/**'
+      - 'lib/screens/design_preview_screen.dart'
+      - 'lib/design_preview_main.dart'
+      - '.github/workflows/build-preview-apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-preview-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Create standalone preview app
+        run: |
+          flutter create \
+            --platforms=android \
+            --org com.craly1245 \
+            --project-name flowtunnel_preview \
+            preview_app
+
+          rm -rf preview_app/lib
+          mkdir -p preview_app/lib/screens
+          cp -R lib/design_system preview_app/lib/design_system
+          cp lib/screens/design_preview_screen.dart preview_app/lib/screens/design_preview_screen.dart
+          cp lib/design_preview_main.dart preview_app/lib/main.dart
+
+          find preview_app/lib -type f -name '*.dart' -print0 | \
+            xargs -0 sed -i 's/package:karing/package:flowtunnel_preview/g'
+
+          sed -i 's/Karing UI Preview/FlowTunnel Preview/g' preview_app/lib/main.dart
+          sed -i 's/Karing Design Preview/FlowTunnel Preview/g' preview_app/lib/screens/design_preview_screen.dart || true
+          sed -i 's/android:label="flowtunnel_preview"/android:label="FlowTunnel Preview"/' \
+            preview_app/android/app/src/main/AndroidManifest.xml
+
+      - name: Verify preview source
+        working-directory: preview_app
+        run: |
+          flutter pub get
+          dart format --output=none --set-exit-if-changed lib
+          flutter analyze
+
+      - name: Build release APK
+        working-directory: preview_app
+        run: flutter build apk --release
+
+      - name: Rename APK
+        run: |
+          cp preview_app/build/app/outputs/flutter-apk/app-release.apk \
+            FlowTunnel-Preview-arm64-universal.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: FlowTunnel-Preview-APK
+          path: FlowTunnel-Preview-arm64-universal.apk
+          if-no-files-found: error
+          retention-days: 7
