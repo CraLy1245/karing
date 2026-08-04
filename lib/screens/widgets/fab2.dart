@@ -1,54 +1,28 @@
 // ignore_for_file: constant_identifier_names
 
-/*
- *  Copyright 2020 Chaobin Wu <chaobinwu89@gmail.com>
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
-
-// ignore: implementation_imports
-import 'package:convex_bottom_bar/src/painter.dart';
 import 'package:flutter/material.dart';
-import 'package:karing/screens/themes.dart';
-import 'package:provider/provider.dart';
+import 'package:karing/design_system/theme/karing_theme_extension.dart';
+import 'package:karing/design_system/tokens/karing_tokens.dart';
 
-/// Single convex button widget
+/// Connection dock used by the home screen.
+///
+/// The public API is intentionally kept compatible with the former convex
+/// painter implementation so the VPN and server-selection code does not need
+/// to change during the visual migration.
 class ConvexButton2 extends StatelessWidget {
-  static const _DEFAULT_SIZE = 60.0;
-  static const _DEFAULT_TOP = 50.0;
+  static const _DEFAULT_SIZE = 64.0;
+  static const _DEFAULT_TOP = 56.0;
   static const _DEFAULT_SIGMA = 2.0;
-  static const _DEFAULT_THICKNESS = 4.0;
+  static const _DEFAULT_THICKNESS = 72.0;
 
-  /// Size of convex shape, should be lager than [top]
   final double? size;
-
-  /// The distance to edge from the bottom of child widget.
   final double? top;
-
-  /// Height of bottom border
   final double? thickness;
-
-  /// Sigma for border
   final double? sigma;
-
-  /// Optional child widget, default to be a widget of Icons.keyboard_voice
   final Widget child;
   final Widget? child2;
-
-  /// Color for the button
   final Color? backgroundColor;
 
-  /// Make new instance of [ConvexButton2]
   const ConvexButton2({
     super.key,
     this.size,
@@ -60,9 +34,6 @@ class ConvexButton2 extends StatelessWidget {
     this.top,
   });
 
-  /// Make a centered convex button.
-  ///
-  /// ![](https://github.com/hacktons/convex_bottom_bar/raw/master/doc/appbar-single-shape.png)
   factory ConvexButton2.fab({
     Key? key,
     double? size,
@@ -76,14 +47,13 @@ class ConvexButton2 extends StatelessWidget {
     Color? backgroundColor,
     VoidCallback? onTap,
   }) {
-    thickness = thickness ?? _DEFAULT_THICKNESS;
-    var fab = Container(
-      margin: EdgeInsets.only(bottom: thickness),
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: color, width: border),
+    final button = Material(
+      type: MaterialType.transparency,
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: Center(child: Icon(icon, color: color, size: iconSize)),
       ),
-      child: Icon(icon, color: color, size: iconSize),
     );
     return ConvexButton2(
       key: key,
@@ -92,7 +62,7 @@ class ConvexButton2 extends StatelessWidget {
       top: top,
       backgroundColor: backgroundColor,
       sigma: sigma,
-      child: GestureDetector(onTap: onTap, child: fab),
+      child: button,
     );
   }
 
@@ -108,15 +78,6 @@ class ConvexButton2 extends StatelessWidget {
     Color color = Colors.redAccent,
     Color? backgroundColor,
   }) {
-    thickness = thickness ?? _DEFAULT_THICKNESS;
-    var fab = Container(
-      margin: EdgeInsets.only(bottom: thickness),
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: color, width: border),
-      ),
-      child: child,
-    );
     return ConvexButton2(
       key: key,
       size: size,
@@ -125,34 +86,84 @@ class ConvexButton2 extends StatelessWidget {
       backgroundColor: backgroundColor,
       sigma: sigma,
       child2: thicknessChild,
-      child: fab,
+      child: child ?? const SizedBox.shrink(),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    var themes = Provider.of<Themes>(context, listen: false);
-    return Stack(
-      alignment: Alignment.bottomCenter,
-      children: [
-        SizedBox(
-          height: thickness ?? _DEFAULT_THICKNESS,
-          width: double.infinity,
-          child: CustomPaint(
-            painter: ConvexPainter(
-              shadowColor: themes.getThemeInvertBgColor(context),
-              top: -(top ?? _DEFAULT_TOP),
-              width: size ?? _DEFAULT_SIZE,
-              height: size ?? _DEFAULT_SIZE,
-              color: backgroundColor ?? Colors.grey[50]!,
-              sigma: sigma ?? _DEFAULT_SIGMA,
-              leftPercent: const AlwaysStoppedAnimation<double>(0.5),
+    final theme = Theme.of(context);
+    final colors = context.karingTheme;
+    final buttonSize = size ?? _DEFAULT_SIZE;
+    final dockHeight = thickness ?? _DEFAULT_THICKNESS;
+    final totalHeight = dockHeight + buttonSize * 0.28;
+    final dockColor = backgroundColor ?? colors.panelBackground;
+
+    return SizedBox(
+      height: totalHeight,
+      width: double.infinity,
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.bottomCenter,
+        children: [
+          Positioned(
+            left: KaringSpacing.lg,
+            right: KaringSpacing.lg,
+            bottom: KaringSpacing.sm,
+            height: dockHeight,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: dockColor,
+                borderRadius: BorderRadius.circular(KaringRadius.xl),
+                border: Border.all(color: colors.subtleBorder),
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.colorScheme.shadow.withValues(alpha: 0.10),
+                    blurRadius: 24,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: EdgeInsetsDirectional.only(
+                  start: KaringSpacing.lg,
+                  end: buttonSize + KaringSpacing.xxl,
+                ),
+                child: child2 ?? const SizedBox.shrink(),
+              ),
             ),
-            child: child2,
           ),
-        ),
-        child,
-      ],
+          PositionedDirectional(
+            end: KaringSpacing.xxl,
+            bottom: KaringSpacing.sm + (dockHeight - buttonSize) / 2,
+            child: Semantics(
+              container: true,
+              child: AnimatedContainer(
+                duration: KaringMotion.standard,
+                width: buttonSize,
+                height: buttonSize,
+                decoration: BoxDecoration(
+                  color: colors.panelBackground,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.25),
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: theme.colorScheme.shadow.withValues(alpha: 0.14),
+                      blurRadius: 18,
+                      offset: const Offset(0, 7),
+                    ),
+                  ],
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: child,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
