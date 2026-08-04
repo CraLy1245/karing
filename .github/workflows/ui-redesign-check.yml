@@ -69,15 +69,21 @@ jobs:
             lib/screens/widgets/fab2.dart \
             lib/screens/widgets/sheet.dart
 
-      - name: Analyze independent design libraries
+      - name: Analyze migrated UI modules
         working-directory: karing
         run: |
           dart analyze lib/design_system
+          dart analyze lib/design_preview_main.dart
+          dart analyze lib/screens/design_preview_screen.dart
           dart analyze lib/screens/theme_data_light.dart
           dart analyze lib/screens/theme_data_dark.dart
           dart analyze lib/screens/theme_define.dart
           dart analyze lib/screens/theme_config.dart
+          dart analyze lib/screens/common_widget.dart
+          dart analyze lib/screens/group_item_creator.dart
+          dart analyze lib/screens/group_item_widgets.dart
           dart analyze lib/screens/listview_multi_parts_builder.dart
+          dart analyze lib/screens/widgets/card.dart
           dart analyze lib/screens/widgets/fab2.dart
           dart analyze lib/screens/widgets/sheet.dart
 
