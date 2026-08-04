@@ -5,12 +5,118 @@ import 'dart:io';
 import 'package:board_datetime_picker/board_datetime_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:karing/app/utils/accessibility_utils.dart';
+import 'package:karing/design_system/theme/karing_theme_extension.dart';
+import 'package:karing/design_system/tokens/karing_tokens.dart';
 import 'package:karing/i18n/strings.g.dart';
 import 'package:karing/screens/dialog_utils.dart';
 import 'package:karing/screens/group_item_options.dart';
-import 'package:karing/screens/theme_define.dart';
 import 'package:karing/screens/widgets/sheet.dart';
 import 'package:karing/screens/widgets/text_field.dart';
+
+class _TipsButton extends StatelessWidget {
+  const _TipsButton(this.text);
+
+  final String? text;
+
+  @override
+  Widget build(BuildContext context) {
+    if (text == null || text!.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(end: KaringSpacing.sm),
+      child: IconButton(
+        tooltip: text,
+        visualDensity: VisualDensity.compact,
+        iconSize: 18,
+        onPressed: () => DialogUtils.showAlertDialog(context, text!),
+        icon: const Icon(Icons.info_outline_rounded),
+      ),
+    );
+  }
+}
+
+class _RedDot extends StatelessWidget {
+  const _RedDot({required this.visible, this.color});
+
+  final bool visible;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!visible) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(end: KaringSpacing.sm),
+      child: Container(
+        width: 7,
+        height: 7,
+        decoration: BoxDecoration(
+          color: color ?? context.karingTheme.danger,
+          shape: BoxShape.circle,
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingRow extends StatelessWidget {
+  const _SettingRow({
+    required this.child,
+    this.onTap,
+    this.onLongPress,
+  });
+
+  final Widget child;
+  final Future<void> Function()? onTap;
+  final Future<void> Function()? onLongPress;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      type: MaterialType.transparency,
+      child: InkWell(
+        onTap: onTap,
+        onLongPress: onLongPress,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: KaringSpacing.lg),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+Widget _label(BuildContext context, String text) {
+  return Text(
+    text,
+    maxLines: 2,
+    overflow: TextOverflow.ellipsis,
+    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+      fontWeight: FontWeight.w500,
+    ),
+  );
+}
+
+Widget _value(
+  BuildContext context,
+  String text, {
+  TextStyle? style,
+  Color? color,
+  int maxLines = 2,
+}) {
+  return Text(
+    text,
+    maxLines: maxLines,
+    overflow: TextOverflow.ellipsis,
+    textAlign: TextAlign.end,
+    style: style ??
+        Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: color ?? Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+  );
+}
 
 class GroupItemText extends StatelessWidget {
   const GroupItemText({super.key, required this.options});
@@ -19,50 +125,33 @@ class GroupItemText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return _SettingRow(
       onTap: options.onPush,
       onLongPress: options.onLongPress,
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          options.child ?? SizedBox.shrink(),
-          options.child != null ? SizedBox(width: 5) : SizedBox.shrink(),
-          if ((options.tips != null) && options.tips!.isNotEmpty) ...[
-            InkWell(
-              onTap: () {
-                DialogUtils.showAlertDialog(context, options.tips!);
-              },
-              child: Tooltip(
-                message: options.tips,
-                child: const Icon(Icons.info_outlined, size: 26),
-              ),
-            ),
-            const SizedBox(width: 5),
+          if (options.child != null) ...[
+            options.child!,
+            const SizedBox(width: KaringSpacing.sm),
           ],
+          _TipsButton(options.tips),
           Expanded(
-            flex: ((1 - options.textWidthPercent) * 10).toInt(),
-            child: Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: Text(
-                options.name,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
+            flex: ((1 - options.textWidthPercent) * 10).round(),
+            child: _label(context, options.name),
           ),
+          const SizedBox(width: KaringSpacing.md),
           Expanded(
-            flex: ((options.textWidthPercent) * 10).toInt(),
+            flex: (options.textWidthPercent * 10).round(),
             child: Align(
               alignment: AlignmentDirectional.centerEnd,
-              child: Text(
+              child: _value(
+                context,
                 options.text ?? "",
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: options.textStyle ?? TextStyle(color: options.textColor),
+                style: options.textStyle,
+                color: options.textColor,
               ),
             ),
           ),
-          SizedBox(width: 5),
         ],
       ),
     );
@@ -76,38 +165,21 @@ class GroupItemTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var controller = options.controller ?? TextEditingController();
+    final controller = options.controller ?? TextEditingController();
     controller.value = controller.value.copyWith(text: options.text);
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: [
-        if ((options.tips != null) && options.tips!.isNotEmpty) ...[
-          InkWell(
-            onTap: () {
-              DialogUtils.showAlertDialog(context, options.tips!);
-            },
-            child: Tooltip(
-              message: options.tips,
-              child: const Icon(Icons.info_outlined, size: 26),
-            ),
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: KaringSpacing.lg),
+      child: Row(
+        children: [
+          _TipsButton(options.tips),
+          Expanded(
+            flex: ((1 - options.textWidthPercent) * 10).round(),
+            child: _label(context, options.name),
           ),
-          const SizedBox(width: 5),
-        ],
-        Expanded(
-          flex: ((1 - options.textWidthPercent) * 10).toInt(),
-          child: Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: Text(
-              options.name,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ),
-        Expanded(
-          flex: ((options.textWidthPercent) * 10).toInt(),
-          child: Align(
-            alignment: AlignmentDirectional.centerEnd,
+          const SizedBox(width: KaringSpacing.md),
+          Expanded(
+            flex: (options.textWidthPercent * 10).round(),
             child: TextFieldEx(
               style: options.textStyle,
               readOnly: options.readOnly,
@@ -117,15 +189,26 @@ class GroupItemTextField extends StatelessWidget {
               decoration: InputDecoration(
                 hintText: options.hint,
                 errorText: options.errorText,
+                filled: false,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: KaringSpacing.sm,
+                  vertical: KaringSpacing.sm,
+                ),
                 border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
               ),
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.end,
               keyboardType: options.keyboardType,
               inputFormatters: options.inputFormatters,
               focusNode: options.focusNode,
               autocorrect: false,
-              enableSuggestions:
-                  true, //Non-English input methods cannot be used after disabling
+              enableSuggestions: true,
               autofocus: options.autoFocus,
               onChanged: options.onChanged,
               enabled: options.enabled,
@@ -134,8 +217,8 @@ class GroupItemTextField extends StatelessWidget {
               autocompleteCandidates: options.autocompleteCandidates,
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -147,47 +230,15 @@ class GroupItemSwitch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: [
-        if ((options.tips != null) && options.tips!.isNotEmpty) ...[
-          InkWell(
-            onTap: () {
-              DialogUtils.showAlertDialog(context, options.tips!);
-            },
-            child: Tooltip(
-              message: options.tips,
-              child: const Icon(Icons.info_outlined, size: 26),
-            ),
-          ),
-          const SizedBox(width: 5),
-        ],
-        if (options.reddot == true) ...[
-          Container(
-            width: 8,
-            height: 8,
-            decoration: const BoxDecoration(
-              color: Colors.red,
-              shape: BoxShape.circle,
-            ),
-          ),
-        ],
-        Expanded(
-          child: Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: Text(
-              options.name,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ),
-        SizedBox(
-          width: 60,
-          child: Switch.adaptive(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: KaringSpacing.lg),
+      child: Row(
+        children: [
+          _TipsButton(options.tips),
+          _RedDot(visible: options.reddot == true),
+          Expanded(child: _label(context, options.name)),
+          Switch.adaptive(
             value: options.switchValue ?? false,
-            activeThumbColor: Colors.white,
-            activeTrackColor: ThemeDefine.kColorGreenBright,
             onChanged: options.onSwitch == null
                 ? null
                 : (value) {
@@ -201,8 +252,8 @@ class GroupItemSwitch extends StatelessWidget {
                     options.onSwitch!(value);
                   },
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -214,62 +265,56 @@ class GroupItemPush extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    final theme = Theme.of(context);
+    return _SettingRow(
       onTap: options.onPush,
       onLongPress: options.onLongPress,
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          if ((options.tips != null) && options.tips!.isNotEmpty) ...[
-            InkWell(
-              onTap: () {
-                DialogUtils.showAlertDialog(context, options.tips!);
-              },
-              child: Tooltip(
-                message: options.tips,
-                child: const Icon(Icons.info_outlined, size: 26),
-              ),
-            ),
-            const SizedBox(width: 5),
-          ],
-          if (options.reddot == true) ...[
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: options.reddotColor ?? Colors.red,
-                shape: BoxShape.circle,
-              ),
-            ),
-          ],
+          _TipsButton(options.tips),
+          _RedDot(
+            visible: options.reddot == true,
+            color: options.reddotColor,
+          ),
           if (options.icon != null) ...[
-            Icon(options.icon, size: 26),
-            const SizedBox(width: 5),
+            Container(
+              width: 32,
+              height: 32,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: context.karingTheme.subtleSurface,
+                borderRadius: BorderRadius.circular(KaringRadius.sm),
+              ),
+              child: Icon(
+                options.icon,
+                size: 18,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            const SizedBox(width: KaringSpacing.md),
           ],
           Expanded(
-            flex: ((1 - options.textWidthPercent) * 10).toInt(),
-            child: Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: Text(
-                options.name,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
+            flex: ((1 - options.textWidthPercent) * 10).round(),
+            child: _label(context, options.name),
           ),
-          Expanded(
-            flex: (options.textWidthPercent * 10).toInt(),
-            child: Align(
-              alignment: AlignmentDirectional.centerEnd,
-              child: Text(
+          if ((options.text ?? '').isNotEmpty) ...[
+            const SizedBox(width: KaringSpacing.md),
+            Expanded(
+              flex: (options.textWidthPercent * 10).round(),
+              child: _value(
+                context,
                 options.text ?? "",
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: options.textStyle ?? TextStyle(color: options.textColor),
+                style: options.textStyle,
+                color: options.textColor,
               ),
             ),
+          ],
+          const SizedBox(width: KaringSpacing.sm),
+          Icon(
+            Icons.chevron_right_rounded,
+            size: 20,
+            color: theme.colorScheme.onSurfaceVariant,
           ),
-          Icon(Icons.arrow_forward_ios_rounded, size: 14),
         ],
       ),
     );
@@ -284,129 +329,79 @@ class GroupItemTimerIntervalPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tcontext = Translations.of(context);
-    return InkWell(
+    return _SettingRow(
       onTap: options.onPicker == null
           ? null
           : () async {
-              DialogUtilsResult<Duration>? result =
-                  await DialogUtils.showTimeIntervalPickerDialog(
-                    context,
-                    options.duration,
-                    showDays: options.showDays,
-                    showHours: options.showHours,
-                    showMinutes: options.showMinutes,
-                    showSeconds: options.showSeconds,
-                    showMilliSeconds: options.showMilliSeconds,
-                    showDisable: options.showDisable,
-                  );
+              final result = await DialogUtils.showTimeIntervalPickerDialog(
+                context,
+                options.duration,
+                showDays: options.showDays,
+                showHours: options.showHours,
+                showMinutes: options.showMinutes,
+                showSeconds: options.showSeconds,
+                showMilliSeconds: options.showMilliSeconds,
+                showDisable: options.showDisable,
+              );
               if (result != null) {
                 options.duration = result.data;
               }
-
               options.onPicker!(result == null, options.duration);
             },
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          if ((options.tips != null) && options.tips!.isNotEmpty) ...[
-            InkWell(
-              onTap: () {
-                DialogUtils.showAlertDialog(context, options.tips!);
-              },
-              child: Tooltip(
-                message: options.tips,
-                child: const Icon(Icons.info_outlined, size: 26),
-              ),
-            ),
-            const SizedBox(width: 5),
-          ],
-          if (options.reddot == true) ...[
-            Container(
-              width: 8,
-              height: 8,
-              decoration: const BoxDecoration(
-                color: Colors.red,
-                shape: BoxShape.circle,
-              ),
-            ),
-          ],
-          Expanded(
-            flex: 8,
-            child: Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: Text(
-                options.name,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
+          _TipsButton(options.tips),
+          _RedDot(visible: options.reddot == true),
+          Expanded(child: _label(context, options.name)),
+          _value(
+            context,
+            _durationToString(options, tcontext.meta.disable),
           ),
-          Expanded(
-            flex: 2,
-            child: Align(
-              alignment: AlignmentDirectional.centerEnd,
-              child: Text(
-                _duratingToString(options, tcontext.meta.disable),
-                style: TextStyle(decoration: TextDecoration.underline),
-              ),
-            ),
+          const SizedBox(width: KaringSpacing.sm),
+          Icon(
+            Icons.schedule_rounded,
+            size: 19,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
-          SizedBox(width: 5),
         ],
       ),
     );
   }
 
-  String _duratingToString(
+  String _durationToString(
     GroupItemTimerIntervalPickerOptions options,
     String disable,
   ) {
-    String ret = "";
-    if (options.duration != null) {
-      if (options.duration!.inDays > 0) {
-        ret = "${options.duration!.inDays} d";
-      } else if (options.duration!.inHours > 0) {
-        ret = "${options.duration!.inHours} h";
-      } else if (options.duration!.inMinutes > 0) {
-        ret = "${options.duration!.inMinutes} m";
-      } else if (options.duration!.inSeconds > 0) {
-        ret = "${options.duration!.inSeconds} s";
-      } else if (options.duration!.inMilliseconds > 0) {
-        ret = "${options.duration!.inMilliseconds} ms";
-      } else if (options.duration!.inMilliseconds == 0) {
-        if (options.showDays) {
-          ret = "0 d";
-        } else if (options.showHours) {
-          ret = "0 h";
-        } else if (options.showMinutes) {
-          ret = "0 m";
-        } else if (options.showSeconds) {
-          ret = "0 s";
-        } else if (options.showMilliSeconds) {
-          ret = "0 ms";
-        }
-      }
-    } else {
-      ret = disable;
+    final duration = options.duration;
+    if (duration == null) {
+      return disable;
     }
-
-    return ret;
+    if (duration.inDays > 0) return '${duration.inDays} d';
+    if (duration.inHours > 0) return '${duration.inHours} h';
+    if (duration.inMinutes > 0) return '${duration.inMinutes} m';
+    if (duration.inSeconds > 0) return '${duration.inSeconds} s';
+    if (duration.inMilliseconds > 0) return '${duration.inMilliseconds} ms';
+    if (options.showDays) return '0 d';
+    if (options.showHours) return '0 h';
+    if (options.showMinutes) return '0 m';
+    if (options.showSeconds) return '0 s';
+    if (options.showMilliSeconds) return '0 ms';
+    return '0';
   }
 }
 
 // ignore: must_be_immutable
 class GroupItemDateTimeDurationPicker extends StatelessWidget {
   GroupItemDateTimeDurationPicker({super.key, required this.options}) {
-    final nstart = options.start;
-    var nend = options.end;
-    if (nstart != null && nend != null) {
-      if (nend.isBefore(nstart)) {
-        nend = nstart;
-      }
+    final initialStart = options.start;
+    var initialEnd = options.end;
+    if (initialStart != null &&
+        initialEnd != null &&
+        initialEnd.isBefore(initialStart)) {
+      initialEnd = initialStart;
     }
-
-    start = ValueNotifier(nstart ?? DateTime.now());
-    end = ValueNotifier(nend ?? DateTime.now());
+    start = ValueNotifier(initialStart ?? DateTime.now());
+    end = ValueNotifier(initialEnd ?? DateTime.now());
   }
 
   final GroupItemDateTimePeriodPickerOptions options;
@@ -417,7 +412,7 @@ class GroupItemDateTimeDurationPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return _SettingRow(
       onTap: options.onPicker == null
           ? null
           : () async {
@@ -441,76 +436,45 @@ class GroupItemDateTimeDurationPicker extends StatelessWidget {
               if (result != null) {
                 start.value = result.start;
                 end.value = result.end;
-
                 options.onPicker?.call(result.start, result.end);
               }
             },
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          if ((options.tips != null) && options.tips!.isNotEmpty) ...[
-            InkWell(
-              onTap: () {
-                DialogUtils.showAlertDialog(context, options.tips!);
-              },
-              child: Tooltip(
-                message: options.tips,
-                child: const Icon(Icons.info_outlined, size: 26),
-              ),
-            ),
-            const SizedBox(width: 5),
-          ],
-          if (options.reddot == true) ...[
-            Container(
-              width: 8,
-              height: 8,
-              decoration: const BoxDecoration(
-                color: Colors.red,
-                shape: BoxShape.circle,
-              ),
-            ),
-          ],
-          Expanded(
-            flex: 4,
-            child: Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: Text(
-                options.name,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
+          _TipsButton(options.tips),
+          _RedDot(visible: options.reddot == true),
+          Expanded(flex: 4, child: _label(context, options.name)),
           Expanded(
             flex: 5,
-            child: Align(
-              alignment: AlignmentDirectional.centerEnd,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  ValueListenableBuilder(
-                    valueListenable: start,
-                    builder: (context, data, _) {
-                      return Text(
-                        BoardDateFormat(options.pickerType.format).format(data),
-                      );
-                    },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                ValueListenableBuilder<DateTime>(
+                  valueListenable: start,
+                  builder: (context, data, _) => _value(
+                    context,
+                    BoardDateFormat(options.pickerType.format).format(data),
+                    maxLines: 1,
                   ),
-                  const SizedBox(height: 4),
-                  ValueListenableBuilder(
-                    valueListenable: end,
-                    builder: (context, data, _) {
-                      return Text(
-                        '~ ${BoardDateFormat(options.pickerType.format).format(data)}',
-                      );
-                    },
+                ),
+                ValueListenableBuilder<DateTime>(
+                  valueListenable: end,
+                  builder: (context, data, _) => _value(
+                    context,
+                    '– ${BoardDateFormat(options.pickerType.format).format(data)}',
+                    maxLines: 1,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-          SizedBox(width: 5),
+          const SizedBox(width: KaringSpacing.sm),
+          Icon(
+            options.pickerType.icon,
+            size: 19,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ],
       ),
     );
@@ -532,7 +496,6 @@ extension DateTimePickerTypeExtension on DateTimePickerType {
   IconData get icon {
     switch (this) {
       case DateTimePickerType.date:
-        return Icons.date_range_rounded;
       case DateTimePickerType.datetime:
         return Icons.date_range_rounded;
       case DateTimePickerType.time:
@@ -581,109 +544,86 @@ class GroupItemStringPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String selectedText = options.selected ?? "";
-    var widgets = [];
+    var selectedText = options.selected ?? "";
+    final widgets = <Widget>[];
+
     if (options.tupleStrings != null) {
-      for (var key in options.tupleStrings!) {
-        if (options.selected == key.item1) {
-          selectedText = key.item2;
-        }
+      for (final item in options.tupleStrings!) {
+        final selected = options.selected == item.item1;
+        if (selected) selectedText = item.item2;
         widgets.add(
           ListTile(
             title: Text(
-              key.item2,
+              item.item2,
               style: TextStyle(
-                color: options.selected == key.item1
-                    ? ThemeDefine.kColorBlue
-                    : null,
                 fontFamily: Platform.isWindows ? 'Emoji' : null,
               ),
             ),
+            trailing: selected ? const Icon(Icons.check_rounded) : null,
+            selected: selected,
             onTap: () async {
               Navigator.pop(context);
-              options.selected = key.item1;
+              options.selected = item.item1;
               options.onPicker?.call(options.selected);
             },
           ),
         );
       }
     } else if (options.strings != null) {
-      for (var key in options.strings!) {
+      for (final item in options.strings!) {
+        final selected = options.selected == item;
         widgets.add(
           ListTile(
             title: Text(
-              key ?? "",
+              item ?? "",
               style: TextStyle(
-                color: options.selected == key ? ThemeDefine.kColorBlue : null,
                 fontFamily: Platform.isWindows ? 'Emoji' : null,
               ),
             ),
+            trailing: selected ? const Icon(Icons.check_rounded) : null,
+            selected: selected,
             onTap: () async {
               Navigator.pop(context);
-              options.selected = key;
+              options.selected = item;
               options.onPicker?.call(options.selected);
             },
           ),
         );
       }
     }
-    return InkWell(
+
+    return _SettingRow(
       onTap: options.onPicker == null
           ? null
-          : () {
-              showSheetWidgets(context: context, widgets: widgets);
+          : () async {
+              await showSheetWidgets(context: context, widgets: widgets);
             },
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          if ((options.tips != null) && options.tips!.isNotEmpty) ...[
-            InkWell(
-              onTap: () {
-                DialogUtils.showAlertDialog(context, options.tips!);
-              },
-              child: Tooltip(
-                message: options.tips,
-                child: const Icon(Icons.info_outlined, size: 26),
-              ),
-            ),
-            const SizedBox(width: 5),
-          ],
-          if (options.reddot == true) ...[
-            Container(
-              width: 8,
-              height: 8,
-              decoration: const BoxDecoration(
-                color: Colors.red,
-                shape: BoxShape.circle,
-              ),
-            ),
-          ],
+          _TipsButton(options.tips),
+          _RedDot(visible: options.reddot == true),
           Expanded(
-            flex: ((1 - options.textWidthPercent) * 10).toInt(),
-            child: Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: Text(
-                options.name,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
+            flex: ((1 - options.textWidthPercent) * 10).round(),
+            child: _label(context, options.name),
+          ),
+          const SizedBox(width: KaringSpacing.md),
+          Expanded(
+            flex: (options.textWidthPercent * 10).round(),
+            child: _value(
+              context,
+              selectedText,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontFamily: Platform.isWindows ? 'Emoji' : null,
               ),
             ),
           ),
-          Expanded(
-            flex: (options.textWidthPercent * 10).toInt(),
-            child: Align(
-              alignment: AlignmentDirectional.centerEnd,
-              child: Text(
-                selectedText,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontFamily: Platform.isWindows ? 'Emoji' : null,
-                ),
-              ),
-            ),
+          const SizedBox(width: KaringSpacing.sm),
+          Icon(
+            Icons.unfold_more_rounded,
+            size: 19,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
-          Icon(Icons.arrow_drop_down, size: 16),
         ],
       ),
     );
