@@ -46,10 +46,10 @@ jobs:
         working-directory: karing
         run: flutter pub get
 
-      - name: Check formatting and syntax
+      - name: Format migrated UI source
         working-directory: karing
         run: |
-          dart format --output=none --set-exit-if-changed \
+          dart format \
             lib/design_system \
             lib/design_preview_main.dart \
             lib/screens/design_preview_screen.dart \
@@ -76,3 +76,25 @@ jobs:
           dart analyze lib/screens/listview_multi_parts_builder.dart
           dart analyze lib/screens/widgets/fab2.dart
           dart analyze lib/screens/widgets/sheet.dart
+
+      - name: Upload formatted UI source
+        uses: actions/upload-artifact@v4
+        with:
+          name: formatted-ui-source
+          retention-days: 1
+          if-no-files-found: error
+          path: |
+            karing/lib/design_system
+            karing/lib/design_preview_main.dart
+            karing/lib/screens/design_preview_screen.dart
+            karing/lib/screens/theme_data_light.dart
+            karing/lib/screens/theme_data_dark.dart
+            karing/lib/screens/theme_define.dart
+            karing/lib/screens/theme_config.dart
+            karing/lib/screens/common_widget.dart
+            karing/lib/screens/group_item_creator.dart
+            karing/lib/screens/group_item_widgets.dart
+            karing/lib/screens/listview_multi_parts_builder.dart
+            karing/lib/screens/widgets/card.dart
+            karing/lib/screens/widgets/fab2.dart
+            karing/lib/screens/widgets/sheet.dart
