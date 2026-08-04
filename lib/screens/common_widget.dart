@@ -9,6 +9,7 @@ import 'package:karing/screens/dialog_utils.dart';
 import 'package:karing/screens/theme_config.dart';
 import 'package:karing/screens/themes.dart';
 import 'package:tuple/tuple.dart';
+import 'package:vpn_service/state.dart';
 
 class CommonWidget {
   static const double kLatencyWidget = 68;
