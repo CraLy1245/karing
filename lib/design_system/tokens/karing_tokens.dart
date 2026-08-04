@@ -13,6 +13,7 @@ abstract final class KaringSpacing {
 }
 
 abstract final class KaringRadius {
+  static const double xs = 6;
   static const double sm = 8;
   static const double md = 12;
   static const double lg = 16;
@@ -30,6 +31,12 @@ abstract final class KaringBreakpoints {
   static const double compact = 600;
   static const double medium = 900;
   static const double expanded = 1200;
+}
+
+abstract final class KaringLayout {
+  static const double contentMaxWidth = 1080;
+  static const double settingsMaxWidth = 840;
+  static const double desktopNavigationWidth = 240;
 }
 
 abstract final class KaringInsets {
