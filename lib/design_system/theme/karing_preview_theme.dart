@@ -22,28 +22,26 @@ abstract final class KaringTheme {
     Brightness brightness,
     KaringThemeExtension extension,
   ) {
-    final scheme = ColorScheme.fromSeed(
-      seedColor: brand,
-      brightness: brightness,
-      dynamicSchemeVariant: DynamicSchemeVariant.fidelity,
-    ).copyWith(
-      surface: extension.appBackground,
-      surfaceContainerLowest: extension.panelBackground,
-      surfaceContainerLow: extension.panelBackground,
-      surfaceContainer: extension.subtleSurface,
-      surfaceContainerHigh: extension.subtleSurface,
-      outline: extension.subtleBorder,
-      outlineVariant: extension.subtleBorder,
-      error: extension.danger,
-      errorContainer: extension.dangerContainer,
-    );
+    final scheme =
+        ColorScheme.fromSeed(
+          seedColor: brand,
+          brightness: brightness,
+          dynamicSchemeVariant: DynamicSchemeVariant.fidelity,
+        ).copyWith(
+          surface: extension.appBackground,
+          surfaceContainerLowest: extension.panelBackground,
+          surfaceContainerLow: extension.panelBackground,
+          surfaceContainer: extension.subtleSurface,
+          surfaceContainerHigh: extension.subtleSurface,
+          outline: extension.subtleBorder,
+          outlineVariant: extension.subtleBorder,
+          error: extension.danger,
+          errorContainer: extension.dangerContainer,
+        );
 
     final textTheme = Typography.material2021(
       platform: TargetPlatform.android,
-    ).black.apply(
-      bodyColor: scheme.onSurface,
-      displayColor: scheme.onSurface,
-    );
+    ).black.apply(bodyColor: scheme.onSurface, displayColor: scheme.onSurface);
 
     return ThemeData(
       useMaterial3: true,
@@ -65,9 +63,7 @@ abstract final class KaringTheme {
         titleMedium: textTheme.titleMedium?.copyWith(
           fontWeight: FontWeight.w600,
         ),
-        titleSmall: textTheme.titleSmall?.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
+        titleSmall: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
       ),
       dividerColor: extension.subtleBorder,
       dividerTheme: DividerThemeData(

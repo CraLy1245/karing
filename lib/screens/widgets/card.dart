@@ -170,7 +170,10 @@ class _CommonCardState extends State<CommonCard> {
 
     if (widget.selectWidget != null && widget.isSelected) {
       content = Stack(
-        children: [content, Positioned.fill(child: widget.selectWidget!)],
+        children: [
+          content,
+          Positioned.fill(child: widget.selectWidget!),
+        ],
       );
     }
 

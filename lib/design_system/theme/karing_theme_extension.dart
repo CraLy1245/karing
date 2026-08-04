@@ -92,10 +92,7 @@ class KaringThemeExtension extends ThemeExtension<KaringThemeExtension> {
   }
 
   @override
-  KaringThemeExtension lerp(
-    covariant KaringThemeExtension? other,
-    double t,
-  ) {
+  KaringThemeExtension lerp(covariant KaringThemeExtension? other, double t) {
     if (other is! KaringThemeExtension) {
       return this;
     }

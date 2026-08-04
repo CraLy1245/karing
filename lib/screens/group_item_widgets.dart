@@ -62,11 +62,7 @@ class _RedDot extends StatelessWidget {
 }
 
 class _SettingRow extends StatelessWidget {
-  const _SettingRow({
-    required this.child,
-    this.onTap,
-    this.onLongPress,
-  });
+  const _SettingRow({required this.child, this.onTap, this.onLongPress});
 
   final Widget child;
   final Future<void> Function()? onTap;
@@ -93,9 +89,9 @@ Widget _label(BuildContext context, String text) {
     text,
     maxLines: 2,
     overflow: TextOverflow.ellipsis,
-    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-      fontWeight: FontWeight.w500,
-    ),
+    style: Theme.of(
+      context,
+    ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
   );
 }
 
@@ -111,7 +107,8 @@ Widget _value(
     maxLines: maxLines,
     overflow: TextOverflow.ellipsis,
     textAlign: TextAlign.end,
-    style: style ??
+    style:
+        style ??
         Theme.of(context).textTheme.bodyMedium?.copyWith(
           color: color ?? Theme.of(context).colorScheme.onSurfaceVariant,
         ),
@@ -272,10 +269,7 @@ class GroupItemPush extends StatelessWidget {
       child: Row(
         children: [
           _TipsButton(options.tips),
-          _RedDot(
-            visible: options.reddot == true,
-            color: options.reddotColor,
-          ),
+          _RedDot(visible: options.reddot == true, color: options.reddotColor),
           if (options.icon != null) ...[
             Container(
               width: 32,
@@ -353,10 +347,7 @@ class GroupItemTimerIntervalPicker extends StatelessWidget {
           _TipsButton(options.tips),
           _RedDot(visible: options.reddot == true),
           Expanded(child: _label(context, options.name)),
-          _value(
-            context,
-            _durationToString(options, tcontext.meta.disable),
-          ),
+          _value(context, _durationToString(options, tcontext.meta.disable)),
           const SizedBox(width: KaringSpacing.sm),
           Icon(
             Icons.schedule_rounded,
@@ -555,9 +546,7 @@ class GroupItemStringPicker extends StatelessWidget {
           ListTile(
             title: Text(
               item.item2,
-              style: TextStyle(
-                fontFamily: Platform.isWindows ? 'Emoji' : null,
-              ),
+              style: TextStyle(fontFamily: Platform.isWindows ? 'Emoji' : null),
             ),
             trailing: selected ? const Icon(Icons.check_rounded) : null,
             selected: selected,
@@ -576,9 +565,7 @@ class GroupItemStringPicker extends StatelessWidget {
           ListTile(
             title: Text(
               item ?? "",
-              style: TextStyle(
-                fontFamily: Platform.isWindows ? 'Emoji' : null,
-              ),
+              style: TextStyle(fontFamily: Platform.isWindows ? 'Emoji' : null),
             ),
             trailing: selected ? const Icon(Icons.check_rounded) : null,
             selected: selected,

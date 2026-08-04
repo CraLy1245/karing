@@ -34,7 +34,8 @@ class ListViewMultiPartsBuilder {
       );
     }
 
-    final listPadding = padding ??
+    final listPadding =
+        padding ??
         const EdgeInsets.fromLTRB(
           KaringSpacing.lg,
           KaringSpacing.sm,

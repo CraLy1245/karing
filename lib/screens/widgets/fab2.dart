@@ -50,7 +50,9 @@ class ConvexButton2 extends StatelessWidget {
       child: InkWell(
         customBorder: const CircleBorder(),
         onTap: onTap,
-        child: Center(child: Icon(icon, color: color, size: iconSize)),
+        child: Center(
+          child: Icon(icon, color: color, size: iconSize),
+        ),
       ),
     );
     return ConvexButton2(

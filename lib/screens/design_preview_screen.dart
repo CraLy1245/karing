@@ -265,9 +265,7 @@ class _ConnectionCard extends StatelessWidget {
               ),
               const SizedBox(height: KaringSpacing.sm),
               Text(
-                connected
-                    ? 'Trojan · 自动分流 · 42 ms'
-                    : '当前不会接管系统网络流量',
+                connected ? 'Trojan · 自动分流 · 42 ms' : '当前不会接管系统网络流量',
                 style: theme.textTheme.bodyLarge?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -440,10 +438,7 @@ class _NetworkStatus extends StatelessWidget {
     return KaringSurfaceCard(
       child: Column(
         children: [
-          _InfoRow(
-            label: '出口 IP',
-            value: connected ? '103.125.***.***' : '—',
-          ),
+          _InfoRow(label: '出口 IP', value: connected ? '103.125.***.***' : '—'),
           const Divider(height: KaringSpacing.xxl),
           _InfoRow(label: '活动连接', value: connected ? '18' : '0'),
           const Divider(height: KaringSpacing.xxl),
