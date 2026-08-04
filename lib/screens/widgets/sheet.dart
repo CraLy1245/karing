@@ -137,7 +137,9 @@ Future<void> showSheetWidgets({
   required List<dynamic> widgets,
   bool isScrollControlled = true,
 }) {
-  final estimatedHeight = (widgets.length * 56.0 + 32).clamp(160.0, 460.0);
+  final estimatedHeight = (widgets.length * 56.0 + 32)
+      .clamp(160.0, 460.0)
+      .toDouble();
   return showSheet<void>(
     context: context,
     isScrollControlled: isScrollControlled,
