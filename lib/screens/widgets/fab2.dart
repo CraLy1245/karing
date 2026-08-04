@@ -11,8 +11,6 @@ import 'package:karing/design_system/tokens/karing_tokens.dart';
 /// to change during the visual migration.
 class ConvexButton2 extends StatelessWidget {
   static const _DEFAULT_SIZE = 64.0;
-  static const _DEFAULT_TOP = 56.0;
-  static const _DEFAULT_SIGMA = 2.0;
   static const _DEFAULT_THICKNESS = 72.0;
 
   final double? size;
