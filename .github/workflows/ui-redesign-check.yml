@@ -38,13 +38,34 @@ jobs:
           mkdir -p vpn-service/lib
           cat > vpn-service/pubspec.yaml <<'EOF'
           name: vpn_service
-          description: CI placeholder for Karing's private sibling package.
+          description: CI placeholder for Karing's separately maintained sibling package.
           version: 0.0.0
           publish_to: none
           environment:
             sdk: '>=3.0.0 <4.0.0'
           EOF
-          touch vpn-service/lib/vpn_service.dart
+          cat > vpn-service/lib/vpn_service.dart <<'EOF'
+          library vpn_service;
+          EOF
+          cat > vpn-service/lib/state.dart <<'EOF'
+          enum FlutterVpnServiceState {
+            invalid,
+            disconnected,
+            connecting,
+            connected,
+            disconnecting,
+            reasserting,
+          }
+
+          class SubscriptionTraffic {
+            String upload = '';
+            String download = '';
+            String total = '';
+            bool overQuota = false;
+
+            dynamic getExpireTime(String languageTag) => null;
+          }
+          EOF
 
       - name: Resolve dependencies
         working-directory: karing
