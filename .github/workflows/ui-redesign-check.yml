@@ -9,8 +9,12 @@ on:
       - main
   workflow_dispatch:
 
+concurrency:
+  group: ui-redesign-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   validate:
@@ -76,6 +80,34 @@ jobs:
           dart analyze lib/screens/listview_multi_parts_builder.dart
           dart analyze lib/screens/widgets/fab2.dart
           dart analyze lib/screens/widgets/sheet.dart
+
+      - name: Commit formatter output
+        if: github.event_name == 'push'
+        working-directory: karing
+        run: |
+          if git diff --quiet; then
+            echo "Source is already formatted."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            lib/design_system \
+            lib/design_preview_main.dart \
+            lib/screens/design_preview_screen.dart \
+            lib/screens/theme_data_light.dart \
+            lib/screens/theme_data_dark.dart \
+            lib/screens/theme_define.dart \
+            lib/screens/theme_config.dart \
+            lib/screens/common_widget.dart \
+            lib/screens/group_item_creator.dart \
+            lib/screens/group_item_widgets.dart \
+            lib/screens/listview_multi_parts_builder.dart \
+            lib/screens/widgets/card.dart \
+            lib/screens/widgets/fab2.dart \
+            lib/screens/widgets/sheet.dart
+          git commit -m "style: format migrated UI source"
+          git push origin HEAD:ui-redesign
 
       - name: Upload formatted UI source
         uses: actions/upload-artifact@v4
