@@ -1,18 +1,41 @@
 import 'package:flutter/material.dart';
+import 'package:karing/design_system/theme/karing_theme_extension.dart';
+import 'package:karing/design_system/tokens/karing_tokens.dart';
+
+bool _useDialogPresentation(BuildContext context) {
+  return MediaQuery.sizeOf(context).width >= KaringBreakpoints.compact;
+}
 
 Future<T?> showSheet<T>({
   required BuildContext context,
   required Widget body,
   bool isScrollControlled = true,
 }) {
+  if (_useDialogPresentation(context)) {
+    return showDialog<T>(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          insetPadding: const EdgeInsets.all(KaringSpacing.xxl),
+          clipBehavior: Clip.antiAlias,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: 560,
+              maxHeight: MediaQuery.sizeOf(dialogContext).height - 64,
+            ),
+            child: SafeArea(child: body),
+          ),
+        );
+      },
+    );
+  }
+
   return showModalBottomSheet<T>(
     context: context,
     isScrollControlled: isScrollControlled,
-    builder: (context) {
-      return SafeArea(child: body);
-    },
-    showDragHandle: true,
     useSafeArea: true,
+    showDragHandle: true,
+    builder: (sheetContext) => SafeArea(child: body),
   );
 }
 
@@ -22,18 +45,35 @@ Future<T?> showSheetWithBuilder<T>({
   required BuildContext context,
   required SheetBuilder builder,
 }) {
+  if (_useDialogPresentation(context)) {
+    return showDialog<T>(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          insetPadding: const EdgeInsets.all(KaringSpacing.xxl),
+          clipBehavior: Clip.antiAlias,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: 560,
+              maxHeight: MediaQuery.sizeOf(dialogContext).height - 64,
+            ),
+            child: SafeArea(child: builder(dialogContext)),
+          ),
+        );
+      },
+    );
+  }
+
   return showModalBottomSheet<T>(
     context: context,
     isScrollControlled: false,
-    builder: (_) {
-      return SafeArea(child: builder(context));
-    },
-    showDragHandle: false,
     useSafeArea: true,
+    showDragHandle: true,
+    builder: (sheetContext) => SafeArea(child: builder(sheetContext)),
   );
 }
 
-class AdaptiveSheetScaffold extends StatefulWidget {
+class AdaptiveSheetScaffold extends StatelessWidget {
   final Widget body;
   final String title;
   final List<Widget> actions;
@@ -46,48 +86,46 @@ class AdaptiveSheetScaffold extends StatefulWidget {
   });
 
   @override
-  State<AdaptiveSheetScaffold> createState() => _AdaptiveSheetScaffoldState();
-}
-
-class _AdaptiveSheetScaffoldState extends State<AdaptiveSheetScaffold> {
-  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final backgroundColor = theme.colorScheme.surface;
+    final colors = context.karingTheme;
+    final desktop = _useDialogPresentation(context);
 
-    final appBar = AppBar(
-      forceMaterialTransparency: true,
-      automaticallyImplyLeading: false,
-      centerTitle: true,
-      backgroundColor: backgroundColor,
-      title: Text(widget.title),
-      actions: widget.actions,
-    );
-
-    final handleSize = Size(32, 4);
     return Container(
-      clipBehavior: Clip.hardEdge,
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28.0)),
-        color: backgroundColor,
+        color: colors.panelBackground,
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(desktop ? KaringRadius.lg : KaringRadius.xl),
+          bottom: Radius.circular(desktop ? KaringRadius.lg : 0),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Padding(
-            padding: EdgeInsets.only(top: 16),
-            child: Container(
-              alignment: Alignment.center,
-              height: handleSize.height,
-              width: handleSize.width,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(handleSize.height / 2),
-                color: theme.colorScheme.onSurfaceVariant,
+          if (!desktop)
+            Padding(
+              padding: const EdgeInsets.only(top: KaringSpacing.md),
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.onSurfaceVariant.withValues(
+                    alpha: 0.35,
+                  ),
+                  borderRadius: BorderRadius.circular(KaringRadius.pill),
+                ),
               ),
             ),
+          AppBar(
+            automaticallyImplyLeading: false,
+            centerTitle: true,
+            backgroundColor: Colors.transparent,
+            title: Text(title),
+            actions: actions,
           ),
-          appBar,
-          Flexible(flex: 1, child: widget.body),
+          Divider(color: colors.subtleBorder),
+          Flexible(child: body),
         ],
       ),
     );
@@ -99,23 +137,25 @@ Future<void> showSheetWidgets({
   required List<dynamic> widgets,
   bool isScrollControlled = true,
 }) {
-  return showSheet(
+  final estimatedHeight = (widgets.length * 56.0 + 32).clamp(160.0, 460.0);
+  return showSheet<void>(
     context: context,
+    isScrollControlled: isScrollControlled,
     body: SizedBox(
-      height: 400,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-        child: Scrollbar(
-          child: ListView.separated(
-            itemBuilder: (BuildContext context, int index) {
-              return widgets[index];
-            },
-            separatorBuilder: (BuildContext context, int index) {
-              return const Divider(height: 1, thickness: 0.3);
-            },
-            itemCount: widgets.length,
-          ),
+      height: estimatedHeight,
+      child: ListView.separated(
+        padding: const EdgeInsets.fromLTRB(
+          KaringSpacing.md,
+          KaringSpacing.xs,
+          KaringSpacing.md,
+          KaringSpacing.lg,
         ),
+        itemBuilder: (itemContext, index) => widgets[index] as Widget,
+        separatorBuilder: (itemContext, index) => const Divider(
+          indent: KaringSpacing.lg,
+          endIndent: KaringSpacing.lg,
+        ),
+        itemCount: widgets.length,
       ),
     ),
   );
