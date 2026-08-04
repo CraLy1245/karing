@@ -142,12 +142,14 @@ class _CommonCardState extends State<CommonCard> {
     } else if (widget.isSelected) {
       background = theme.colorScheme.primaryContainer.withValues(alpha: 0.55);
     } else {
-      final safeAlpha = widget.alpha.clamp(0, 255);
+      final safeAlpha = widget.alpha.clamp(0, 255).toInt();
       background = colors.panelBackground.withAlpha(safeAlpha);
     }
 
     final borderColor = highlighted
-        ? theme.colorScheme.primary.withValues(alpha: widget.isSelected ? 0.7 : 0.35)
+        ? theme.colorScheme.primary.withValues(
+            alpha: widget.isSelected ? 0.7 : 0.35,
+          )
         : colors.subtleBorder;
 
     Widget content = Padding(
