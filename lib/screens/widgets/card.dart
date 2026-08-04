@@ -1,10 +1,11 @@
+import 'package:flutter/material.dart';
+import 'package:karing/design_system/theme/karing_theme_extension.dart';
+import 'package:karing/design_system/tokens/karing_tokens.dart';
 import 'package:karing/screens/dialog_utils.dart';
 
-import 'enum.dart';
 import 'constant.dart';
+import 'enum.dart';
 import 'fade_box.dart';
-import 'color.dart';
-import 'package:flutter/material.dart';
 
 class Info {
   final String label;
@@ -29,69 +30,66 @@ class InfoHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colors = context.karingTheme;
+
     return Padding(
       padding: padding ?? baseInfoEdgeInsets,
       child: Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Flexible(
-            flex: 1,
-            child: Row(
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                if (info.iconData != null) ...[
-                  Icon(
-                    info.iconData,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 8),
-                ],
-                Flexible(
-                  flex: 1,
-                  child: Tooltip(
-                    message: info.label,
-                    child: Text(
-                      info.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
+          if (info.iconData != null) ...[
+            Container(
+              width: 32,
+              height: 32,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: colors.subtleSurface,
+                borderRadius: BorderRadius.circular(KaringRadius.sm),
+              ),
+              child: Icon(
+                info.iconData,
+                size: 18,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            const SizedBox(width: KaringSpacing.md),
+          ],
+          Expanded(
+            child: Tooltip(
+              message: info.label,
+              child: Text(
+                info.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
                 ),
-                if (info.tips.isNotEmpty) ...[
-                  const SizedBox(width: 8),
-                  Tooltip(
-                    message: info.tips,
-                    child: InkWell(
-                      onTap: () {
-                        DialogUtils.showAlertDialog(context, info.tips);
-                      },
-                      child: Icon(
-                        Icons.info_outline,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
+              ),
             ),
           ),
-          const SizedBox(width: 8),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [...actions],
-          ),
+          if (info.tips.isNotEmpty) ...[
+            const SizedBox(width: KaringSpacing.xs),
+            IconButton(
+              tooltip: info.tips,
+              visualDensity: VisualDensity.compact,
+              iconSize: 18,
+              onPressed: () {
+                DialogUtils.showAlertDialog(context, info.tips);
+              },
+              icon: const Icon(Icons.info_outline_rounded),
+            ),
+          ],
+          if (actions.isNotEmpty) ...[
+            const SizedBox(width: KaringSpacing.sm),
+            Row(mainAxisSize: MainAxisSize.min, children: actions),
+          ],
         ],
       ),
     );
   }
 }
 
-class CommonCard extends StatelessWidget {
+class CommonCard extends StatefulWidget {
   const CommonCard({
     super.key,
     bool? isSelected,
@@ -99,7 +97,7 @@ class CommonCard extends StatelessWidget {
     this.onPressed,
     this.onLongPress,
     this.selectWidget,
-    this.radius = 12,
+    this.radius = KaringRadius.lg,
     required this.child,
     this.padding,
     this.enterAnimated = false,
@@ -121,97 +119,107 @@ class CommonCard extends StatelessWidget {
   final FocusNode? focusNode;
   final int alpha;
 
-  // final WidgetStateProperty<Color?>? backgroundColor;
-  // final WidgetStateProperty<BorderSide?>? borderSide;
+  @override
+  State<CommonCard> createState() => _CommonCardState();
+}
 
-  BorderSide getBorderSide(BuildContext context, Set<WidgetState> states) {
-    final colorScheme = Theme.of(context).colorScheme;
-    if (type == CommonCardType.filled) {
-      return BorderSide.none;
-    }
-    final hoverColor = isSelected
-        ? colorScheme.primary.opacity80
-        : colorScheme.primary.opacity60;
-    if (states.contains(WidgetState.hovered) ||
-        states.contains(WidgetState.focused) ||
-        states.contains(WidgetState.pressed)) {
-      return BorderSide(color: hoverColor);
-    }
-    return BorderSide(
-      color: isSelected
-          ? colorScheme.primary
-          : colorScheme.surfaceContainerHighest,
-    );
-  }
-
-  Color? getBackgroundColor(BuildContext context, Set<WidgetState> states) {
-    final colorScheme = Theme.of(context).colorScheme;
-    if (type == CommonCardType.filled) {
-      if (isSelected) {
-        return colorScheme.secondaryContainer.opacity80;
-      }
-      return colorScheme.surfaceContainer;
-    }
-    if (isSelected) {
-      return colorScheme.secondaryContainer;
-    }
-    if (alpha >= 0 && alpha <= 255) {
-      return colorScheme.surfaceContainerLow.withAlpha(alpha);
-    }
-    return colorScheme.surfaceContainerLow;
-  }
+class _CommonCardState extends State<CommonCard> {
+  bool _hovered = false;
+  bool _focused = false;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    var childWidget = child;
+    final colors = context.karingTheme;
+    final interactive = widget.onPressed != null || widget.onLongPress != null;
+    final highlighted = widget.isSelected || _hovered || _focused;
 
-    if (info != null) {
-      childWidget = Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          InfoHeader(
-            padding: baseInfoEdgeInsets.copyWith(bottom: 0),
-            info: info!,
-          ),
-          Flexible(flex: 1, child: child),
-        ],
+    Color background;
+    if (widget.type == CommonCardType.filled) {
+      background = widget.isSelected
+          ? theme.colorScheme.primaryContainer
+          : colors.subtleSurface;
+    } else if (widget.isSelected) {
+      background = theme.colorScheme.primaryContainer.withValues(alpha: 0.55);
+    } else {
+      final safeAlpha = widget.alpha.clamp(0, 255);
+      background = colors.panelBackground.withAlpha(safeAlpha);
+    }
+
+    final borderColor = highlighted
+        ? theme.colorScheme.primary.withValues(alpha: widget.isSelected ? 0.7 : 0.35)
+        : colors.subtleBorder;
+
+    Widget content = Padding(
+      padding: widget.padding ?? EdgeInsets.zero,
+      child: widget.info == null
+          ? widget.child
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                InfoHeader(
+                  padding: baseInfoEdgeInsets.copyWith(bottom: 0),
+                  info: widget.info!,
+                ),
+                Flexible(child: widget.child),
+              ],
+            ),
+    );
+
+    if (widget.selectWidget != null && widget.isSelected) {
+      content = Stack(
+        children: [content, Positioned.fill(child: widget.selectWidget!)],
       );
     }
 
-    if (selectWidget != null && isSelected) {
-      final List<Widget> children = [];
-      children.add(childWidget);
-      children.add(Positioned.fill(child: selectWidget!));
-      childWidget = Stack(children: children);
-    }
-
-    final card = OutlinedButton(
-      focusNode: focusNode,
-      onLongPress: onLongPress,
-      clipBehavior: Clip.antiAlias,
-      style: ButtonStyle(
-        padding: const WidgetStatePropertyAll(EdgeInsets.zero),
-        shape: WidgetStatePropertyAll(
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(radius)),
-        ),
-        iconColor: WidgetStatePropertyAll(theme.colorScheme.primary),
-        iconSize: WidgetStateProperty.all(20),
-        backgroundColor: WidgetStateProperty.resolveWith(
-          (states) => getBackgroundColor(context, states),
-        ),
-        side: WidgetStateProperty.resolveWith(
-          (states) => getBorderSide(context, states),
+    Widget card = AnimatedContainer(
+      duration: KaringMotion.fast,
+      curve: Curves.easeOutCubic,
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(widget.radius),
+        border: Border.all(color: borderColor),
+        boxShadow: highlighted && interactive
+            ? [
+                BoxShadow(
+                  color: theme.colorScheme.shadow.withValues(alpha: 0.06),
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
+                ),
+              ]
+            : const [],
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        clipBehavior: Clip.antiAlias,
+        borderRadius: BorderRadius.circular(widget.radius),
+        child: InkWell(
+          focusNode: widget.focusNode,
+          canRequestFocus: interactive,
+          onTap: widget.onPressed,
+          onLongPress: widget.onLongPress,
+          onHover: (value) {
+            if (_hovered != value) {
+              setState(() => _hovered = value);
+            }
+          },
+          onFocusChange: (value) {
+            if (_focused != value) {
+              setState(() => _focused = value);
+            }
+          },
+          overlayColor: WidgetStatePropertyAll(
+            theme.colorScheme.primary.withValues(alpha: 0.06),
+          ),
+          child: content,
         ),
       ),
-      onPressed: onPressed,
-      child: childWidget,
     );
 
-    return switch (enterAnimated) {
-      true => FadeScaleEnterBox(child: card),
-      false => card,
-    };
+    if (widget.enterAnimated) {
+      card = FadeScaleEnterBox(child: card);
+    }
+    return card;
   }
 }
 
@@ -221,12 +229,20 @@ class SelectIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Material(
-      color: theme.colorScheme.inversePrimary,
-      shape: const CircleBorder(),
+    return Align(
+      alignment: AlignmentDirectional.topEnd,
       child: Container(
-        padding: const EdgeInsets.all(4),
-        child: const Icon(Icons.check, size: 16),
+        margin: const EdgeInsets.all(KaringSpacing.sm),
+        padding: const EdgeInsets.all(KaringSpacing.xs),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.primary,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          Icons.check_rounded,
+          size: 15,
+          color: theme.colorScheme.onPrimary,
+        ),
       ),
     );
   }
@@ -240,12 +256,42 @@ class SettingsBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = context.karingTheme;
+
     return Padding(
-      padding: EdgeInsets.all(8),
+      padding: const EdgeInsets.fromLTRB(
+        KaringSpacing.lg,
+        KaringSpacing.sm,
+        KaringSpacing.lg,
+        KaringSpacing.lg,
+      ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          InfoHeader(info: Info(label: title)),
-          Card(child: Column(children: settings)),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              KaringSpacing.xs,
+              KaringSpacing.md,
+              KaringSpacing.xs,
+              KaringSpacing.sm,
+            ),
+            child: Text(
+              title,
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              color: colors.panelBackground,
+              borderRadius: BorderRadius.circular(KaringRadius.lg),
+              border: Border.all(color: colors.subtleBorder),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(children: settings),
+          ),
         ],
       ),
     );
