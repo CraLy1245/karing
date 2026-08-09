@@ -1,0 +1,111 @@
+name: UI Redesign Check
+
+on:
+  push:
+    branches:
+      - ui-redesign
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ui-redesign-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout Karing
+        uses: actions/checkout@v4
+        with:
+          path: karing
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Prepare local VPN service placeholder
+        run: |
+          mkdir -p vpn-service/lib
+          cat > vpn-service/pubspec.yaml <<'EOF'
+          name: vpn_service
+          description: CI placeholder for Karing's separately maintained sibling package.
+          version: 0.0.0
+          publish_to: none
+          environment:
+            sdk: '>=3.0.0 <4.0.0'
+          EOF
+          cat > vpn-service/lib/vpn_service.dart <<'EOF'
+          library vpn_service;
+          EOF
+          cat > vpn-service/lib/state.dart <<'EOF'
+          enum FlutterVpnServiceState {
+            invalid,
+            disconnected,
+            connecting,
+            connected,
+            disconnecting,
+            reasserting,
+          }
+
+          class SubscriptionTraffic {
+            String upload = '';
+            String download = '';
+            String total = '';
+            bool overQuota = false;
+
+            dynamic getExpireTime(String languageTag) => null;
+          }
+          EOF
+
+      - name: Resolve dependencies
+        working-directory: karing
+        run: flutter pub get
+
+      - name: Check migrated UI formatting
+        working-directory: karing
+        run: |
+          dart format --output=none --set-exit-if-changed \
+            lib/design_system \
+            lib/design_preview_main.dart \
+            lib/app/utils/accessibility_utils.dart \
+            lib/screens/design_preview_screen.dart \
+            lib/screens/theme_data_light.dart \
+            lib/screens/theme_data_dark.dart \
+            lib/screens/theme_define.dart \
+            lib/screens/theme_config.dart \
+            lib/screens/common_widget.dart \
+            lib/screens/group_item_creator.dart \
+            lib/screens/group_item_widgets.dart \
+            lib/screens/listview_multi_parts_builder.dart \
+            lib/screens/widgets/card.dart \
+            lib/screens/widgets/fab2.dart \
+            lib/screens/widgets/sheet.dart
+
+      - name: Analyze migrated UI modules
+        working-directory: karing
+        run: |
+          dart analyze lib/design_system
+          dart analyze lib/design_preview_main.dart
+          dart analyze lib/app/utils/accessibility_utils.dart
+          dart analyze lib/screens/design_preview_screen.dart
+          dart analyze lib/screens/theme_data_light.dart
+          dart analyze lib/screens/theme_data_dark.dart
+          dart analyze lib/screens/theme_define.dart
+          dart analyze lib/screens/theme_config.dart
+          dart analyze lib/screens/common_widget.dart
+          dart analyze lib/screens/group_item_creator.dart
+          dart analyze lib/screens/group_item_widgets.dart
+          dart analyze lib/screens/listview_multi_parts_builder.dart
+          dart analyze lib/screens/widgets/card.dart
+          dart analyze lib/screens/widgets/fab2.dart
+          dart analyze lib/screens/widgets/sheet.dart

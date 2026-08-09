@@ -2,16 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:karing/app/modules/server_manager.dart';
 import 'package:karing/app/modules/setting_manager.dart';
 import 'package:karing/app/runtime/return_result.dart';
-import 'package:karing/app/utils/proxy_conf_utils.dart';
+import 'package:karing/design_system/theme/karing_theme_extension.dart';
+import 'package:karing/design_system/tokens/karing_tokens.dart';
 import 'package:karing/i18n/strings.g.dart';
 import 'package:karing/screens/dialog_utils.dart';
 import 'package:karing/screens/theme_config.dart';
-import 'package:karing/screens/theme_define.dart';
 import 'package:karing/screens/themes.dart';
 import 'package:tuple/tuple.dart';
+import 'package:vpn_service/state.dart';
 
 class CommonWidget {
-  static const double kLatencyWidget = 60;
+  static const double kLatencyWidget = 68;
+
   static Widget createLatencyWidget(
     BuildContext context,
     Themes themes,
@@ -21,23 +23,22 @@ class CommonWidget {
     String latency, {
     void Function()? onTapLatencyReload,
   }) {
-    const double defaultHeight = 30;
+    final semantic = context.karingTheme;
+    final theme = Theme.of(context);
+    const defaultHeight = 30.0;
+
     if (loading) {
       return SizedBox(
         width: kLatencyWidget,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(
-              height: 20,
-              width: 20,
-              child: RepaintBoundary(
-                child: CircularProgressIndicator(
-                  color: isTesting ? ThemeDefine.kColorGreenBright : null,
-                ),
-              ),
+        height: height ?? defaultHeight,
+        child: Center(
+          child: SizedBox(
+            height: 18,
+            width: 18,
+            child: CircularProgressIndicator(
+              color: isTesting ? semantic.success : null,
             ),
-          ],
+          ),
         ),
       );
     }
@@ -45,68 +46,70 @@ class CommonWidget {
       return const SizedBox(width: kLatencyWidget);
     }
 
-    int? la = int.tryParse(latency);
-    if (la == null) {
+    final value = int.tryParse(latency);
+    if (value == null) {
       return SizedBox(
         width: kLatencyWidget,
         height: height ?? defaultHeight,
-        child: InkWell(
-          onTap: () async {
-            final tcontext = Translations.of(context);
+        child: IconButton(
+          tooltip: latency,
+          visualDensity: VisualDensity.compact,
+          onPressed: () async {
             if (onTapLatencyReload == null) {
               DialogUtils.showAlertDialog(context, latency);
-            } else {
-              bool? ok = await DialogUtils.showConfirmDialog(
-                context,
-                "$latency\n\n${tcontext.meta.retry}",
-                showCopy: true,
-                withVersion: true,
-              );
-              if (ok == true) {
-                onTapLatencyReload();
-              }
+              return;
             }
+            final retry = await DialogUtils.showConfirmDialog(
+              context,
+              '$latency\n\n${Translations.of(context).meta.retry}',
+              showCopy: true,
+              withVersion: true,
+            );
+            if (retry == true) onTapLatencyReload();
           },
-          child: const SizedBox(
-            width: kLatencyWidget,
-            child: Icon(
-              Icons.warning_amber_outlined,
-              size: 30,
-              color: Colors.red,
-            ),
+          icon: Icon(
+            Icons.warning_amber_rounded,
+            color: semantic.danger,
+            size: 20,
           ),
         ),
       );
     }
-    late Color color;
-    if (la < 800) {
-      color = ThemeDefine.kColorGreenBright;
-    } else if (la < 1500) {
-      color = themes.getThemeInvertBgColor(context);
+
+    late final Color foreground;
+    late final Color background;
+    if (value < 300) {
+      foreground = semantic.success;
+      background = semantic.successContainer;
+    } else if (value < 800) {
+      foreground = semantic.warning;
+      background = semantic.warningContainer;
     } else {
-      color = Colors.red;
+      foreground = semantic.danger;
+      background = semantic.dangerContainer;
     }
 
     return SizedBox(
       width: kLatencyWidget,
       height: height ?? defaultHeight,
       child: InkWell(
-        onTap: () async {
-          if (onTapLatencyReload != null) {
-            onTapLatencyReload();
-          }
-        },
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              "$latency ms",
-              style: TextStyle(
-                fontSize: ThemeConfig.kFontSizeListSubItem,
-                color: color,
-              ),
+        borderRadius: BorderRadius.circular(KaringRadius.pill),
+        onTap: onTapLatencyReload,
+        child: Container(
+          alignment: Alignment.center,
+          margin: const EdgeInsets.symmetric(vertical: 3),
+          decoration: BoxDecoration(
+            color: background,
+            borderRadius: BorderRadius.circular(KaringRadius.pill),
+          ),
+          child: Text(
+            '$latency ms',
+            maxLines: 1,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: foreground,
+              fontWeight: FontWeight.w700,
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -123,63 +126,79 @@ class CommonWidget {
     void Function(String) reloadStart,
     void Function(String, ReturnResult<SubscriptionTraffic> value) reloadFinish,
   ) {
-    if (traffic == null) {
-      return const Row();
-    }
-    final tcontext = Translations.of(context);
-    var settings = SettingManager.getConfig();
+    if (traffic == null) return const Row();
 
-    Tuple2<bool, String> exp = traffic.getExpireTime(settings.languageTag);
-    bool expiring = exp.item1;
-    String expireTime = exp.item2;
-
-    double fontSize = windowWidth >= 335
+    final theme = Theme.of(context);
+    final semantic = context.karingTheme;
+    final settings = SettingManager.getConfig();
+    final Tuple2<bool, String> expiration = traffic.getExpireTime(
+      settings.languageTag,
+    );
+    final expiring = expiration.item1;
+    final expireTime = expiration.item2;
+    final fontSize = windowWidth >= 335
         ? ThemeConfig.kFontSizeListSubItem
-        : 12;
+        : 12.0;
 
     return Row(
       mainAxisAlignment: mainAxisAlignment ?? MainAxisAlignment.start,
       children: [
         SizedBox(width: offset),
-        Text(
-          "↑ ${traffic.upload} ↓ ${traffic.download} / ${traffic.total}",
-          style: TextStyle(
-            fontSize: fontSize,
-            color: traffic.overQuota ? Colors.red : null,
-          ),
-        ),
-        const SizedBox(width: 5),
-        InkWell(
-          onTap: () async {
-            ServerManager.reloadTraffic(groupId).then((value) {
-              reloadFinish(groupId, value);
-            });
-            reloadStart(groupId);
-          },
-          child: Row(
+        Expanded(
+          child: Wrap(
+            spacing: KaringSpacing.md,
+            runSpacing: KaringSpacing.xs,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              Icon(Icons.share_arrival_time_outlined, size: 16),
-              const SizedBox(width: 3),
               Text(
-                expireTime,
-                style: TextStyle(
+                '↑ ${traffic.upload}  ↓ ${traffic.download}  / ${traffic.total}',
+                style: theme.textTheme.bodySmall?.copyWith(
                   fontSize: fontSize,
-                  color: expiring ? Colors.red : null,
+                  color: traffic.overQuota ? semantic.danger : null,
                 ),
               ),
-              ServerManager.isReloadingTraffic(groupId)
-                  ? const SizedBox(
-                      height: 26,
-                      width: 26,
-                      child: RepaintBoundary(
-                        child: CircularProgressIndicator(),
+              InkWell(
+                borderRadius: BorderRadius.circular(KaringRadius.sm),
+                onTap: () {
+                  ServerManager.reloadTraffic(groupId).then((value) {
+                    reloadFinish(groupId, value);
+                  });
+                  reloadStart(groupId);
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: KaringSpacing.xs,
+                    vertical: KaringSpacing.xxs,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.schedule_rounded,
+                        size: 16,
+                        color: expiring ? semantic.danger : semantic.warning,
                       ),
-                    )
-                  : Tooltip(
-                      message:
-                          "${tcontext.meta.refresh} ${tcontext.meta.traffic}",
-                      child: const Icon(Icons.refresh_outlined, size: 26),
-                    ),
+                      const SizedBox(width: KaringSpacing.xs),
+                      Text(
+                        expireTime,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontSize: fontSize,
+                          color: expiring ? semantic.danger : null,
+                        ),
+                      ),
+                      const SizedBox(width: KaringSpacing.xs),
+                      if (ServerManager.isReloadingTraffic(groupId))
+                        const SizedBox(
+                          height: 15,
+                          width: 15,
+                          child: CircularProgressIndicator(),
+                        )
+                      else
+                        const Icon(Icons.refresh_rounded, size: 17),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -194,25 +213,46 @@ class CommonWidget {
     Function() onRefresh,
   ) {
     final tcontext = Translations.of(context);
-    return SizedBox(
-      width: 300,
-      child: Column(
-        children: [
-          const SizedBox(height: 50),
-          ElevatedButton(
-            child: Text(text),
-            onPressed: () async {
-              onPermission();
-            },
+    final semantic = context.karingTheme;
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: Container(
+          padding: const EdgeInsets.all(KaringSpacing.xxl),
+          decoration: BoxDecoration(
+            color: semantic.panelBackground,
+            borderRadius: BorderRadius.circular(KaringRadius.lg),
+            border: Border.all(color: semantic.subtleBorder),
           ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            child: Text(tcontext.meta.refresh),
-            onPressed: () async {
-              onRefresh();
-            },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.admin_panel_settings_outlined,
+                size: 40,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(height: KaringSpacing.lg),
+              Text(
+                text,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: KaringSpacing.xl),
+              FilledButton.icon(
+                onPressed: onPermission,
+                icon: const Icon(Icons.lock_open_rounded),
+                label: Text(text),
+              ),
+              const SizedBox(height: KaringSpacing.sm),
+              TextButton.icon(
+                onPressed: onRefresh,
+                icon: const Icon(Icons.refresh_rounded),
+                label: Text(tcontext.meta.refresh),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
