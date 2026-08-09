@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:karing/design_system/theme/karing_theme_extension.dart';
 import 'package:karing/design_system/tokens/karing_tokens.dart';
@@ -40,7 +41,7 @@ abstract final class KaringTheme {
         );
 
     final textTheme = Typography.material2021(
-      platform: TargetPlatform.android,
+      platform: defaultTargetPlatform,
     ).black.apply(bodyColor: scheme.onSurface, displayColor: scheme.onSurface);
 
     return ThemeData(

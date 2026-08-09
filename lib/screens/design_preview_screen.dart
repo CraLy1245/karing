@@ -75,7 +75,7 @@ class _DesignPreviewScreenState extends State<DesignPreviewScreen> {
                       child: const SizedBox(
                         width: 44,
                         height: 44,
-                        child: Icon(Icons.shield_outlined, color: Colors.white),
+                        child: _NavigationMark(),
                       ),
                     ),
                   ),
@@ -137,6 +137,18 @@ class _DesignPreviewScreenState extends State<DesignPreviewScreen> {
     setState(() {
       _selectedIndex = value;
     });
+  }
+}
+
+class _NavigationMark extends StatelessWidget {
+  const _NavigationMark();
+
+  @override
+  Widget build(BuildContext context) {
+    return Icon(
+      Icons.shield_outlined,
+      color: Theme.of(context).colorScheme.onPrimary,
+    );
   }
 }
 
@@ -236,105 +248,117 @@ class _ConnectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final semantic = context.karingTheme;
-    final statusColor = connected ? semantic.success : semantic.danger;
+    final statusColor = connected
+        ? semantic.success
+        : theme.colorScheme.primary;
 
-    return KaringSurfaceCard(
-      emphasized: connected,
-      padding: const EdgeInsets.all(KaringSpacing.xxl),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final horizontal = constraints.maxWidth >= 640;
-          final details = Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              KaringStatusBadge(
-                label: connected ? '已连接' : '未连接',
-                tone: connected
-                    ? KaringStatusTone.success
-                    : KaringStatusTone.danger,
-                icon: connected
-                    ? Icons.check_circle_outline_rounded
-                    : Icons.remove_circle_outline_rounded,
-              ),
-              const SizedBox(height: KaringSpacing.xl),
-              Text(
-                connected ? '日本 · Tokyo 01' : '选择一个节点开始连接',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: KaringSpacing.sm),
-              Text(
-                connected ? 'Trojan · 自动分流 · 42 ms' : '当前不会接管系统网络流量',
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: KaringSpacing.xl),
-              Wrap(
-                spacing: KaringSpacing.sm,
-                runSpacing: KaringSpacing.sm,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final horizontal = constraints.maxWidth >= 640;
+        final contentGap = horizontal ? KaringSpacing.xl : KaringSpacing.lg;
+        final powerSize = horizontal ? 112.0 : 88.0;
+        final powerIconSize = horizontal ? 48.0 : 40.0;
+
+        return KaringSurfaceCard(
+          emphasized: connected,
+          padding: EdgeInsets.all(
+            horizontal ? KaringSpacing.xxl : KaringSpacing.lg,
+          ),
+          child: Builder(
+            builder: (context) {
+              final details = Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  OutlinedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.swap_horiz_rounded),
-                    label: const Text('切换节点'),
+                  KaringStatusBadge(
+                    label: connected ? '已连接' : '未连接',
+                    tone: connected
+                        ? KaringStatusTone.success
+                        : KaringStatusTone.neutral,
+                    icon: connected
+                        ? Icons.check_circle_outline_rounded
+                        : Icons.radio_button_unchecked_rounded,
                   ),
-                  OutlinedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.tune_rounded),
-                    label: const Text('分流模式'),
+                  SizedBox(height: contentGap),
+                  Text(
+                    connected ? '日本 · Tokyo 01' : '选择一个节点开始连接',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: KaringSpacing.sm),
+                  Text(
+                    connected ? 'Trojan · 自动分流 · 42 ms' : '当前不会接管系统网络流量',
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  SizedBox(height: contentGap),
+                  Wrap(
+                    spacing: KaringSpacing.sm,
+                    runSpacing: KaringSpacing.sm,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () {},
+                        icon: const Icon(Icons.swap_horiz_rounded),
+                        label: const Text('切换节点'),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: () {},
+                        icon: const Icon(Icons.tune_rounded),
+                        label: const Text('分流模式'),
+                      ),
+                    ],
                   ),
                 ],
-              ),
-            ],
-          );
+              );
 
-          final power = Semantics(
-            button: true,
-            toggled: connected,
-            label: connected ? '断开连接' : '开始连接',
-            child: InkWell(
-              onTap: onToggle,
-              customBorder: const CircleBorder(),
-              child: AnimatedContainer(
-                duration: KaringMotion.standard,
-                width: 112,
-                height: 112,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: statusColor.withValues(alpha: 0.12),
-                  border: Border.all(color: statusColor, width: 2),
+              final power = Semantics(
+                button: true,
+                toggled: connected,
+                label: connected ? '断开连接' : '开始连接',
+                child: InkWell(
+                  onTap: onToggle,
+                  customBorder: const CircleBorder(),
+                  child: AnimatedContainer(
+                    duration: KaringMotion.standard,
+                    width: powerSize,
+                    height: powerSize,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: statusColor.withValues(alpha: 0.12),
+                      border: Border.all(color: statusColor, width: 2),
+                    ),
+                    child: Icon(
+                      Icons.power_settings_new_rounded,
+                      size: powerIconSize,
+                      color: statusColor,
+                    ),
+                  ),
                 ),
-                child: Icon(
-                  Icons.power_settings_new_rounded,
-                  size: 48,
-                  color: statusColor,
-                ),
-              ),
-            ),
-          );
+              );
 
-          if (horizontal) {
-            return Row(
-              children: [
-                Expanded(child: details),
-                const SizedBox(width: KaringSpacing.xxl),
-                power,
-              ],
-            );
-          }
+              if (horizontal) {
+                return Row(
+                  children: [
+                    Expanded(child: details),
+                    const SizedBox(width: KaringSpacing.xxl),
+                    power,
+                  ],
+                );
+              }
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              details,
-              const SizedBox(height: KaringSpacing.xxl),
-              Align(alignment: Alignment.center, child: power),
-            ],
-          );
-        },
-      ),
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  details,
+                  const SizedBox(height: KaringSpacing.lg),
+                  Align(alignment: Alignment.center, child: power),
+                ],
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }
@@ -348,13 +372,17 @@ class _MetricsCard extends StatelessWidget {
     return KaringSurfaceCard(
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final threeColumns = constraints.maxWidth >= 720;
-          final width = threeColumns
-              ? (constraints.maxWidth - KaringSpacing.xxl * 2) / 3
-              : constraints.maxWidth;
+          final columns = constraints.maxWidth >= 720
+              ? 3
+              : constraints.maxWidth >= 300
+              ? 2
+              : 1;
+          final spacing = columns == 3 ? KaringSpacing.xxl : KaringSpacing.md;
+          final width =
+              (constraints.maxWidth - spacing * (columns - 1)) / columns;
           return Wrap(
-            spacing: KaringSpacing.xxl,
-            runSpacing: KaringSpacing.xl,
+            spacing: spacing,
+            runSpacing: KaringSpacing.lg,
             children: [
               SizedBox(
                 width: width,

@@ -45,7 +45,9 @@ jobs:
             --project-name flowtunnel_preview \
             preview_app
 
-          rm -rf preview_app/lib
+          # The generated smoke test targets Flutter's default MyApp class,
+          # which is replaced below by the Karing preview entrypoint.
+          rm -rf preview_app/lib preview_app/test
           mkdir -p preview_app/lib/screens
           cp -R lib/design_system preview_app/lib/design_system
           cp lib/screens/design_preview_screen.dart preview_app/lib/screens/design_preview_screen.dart

@@ -99,6 +99,7 @@ class KaringSurfaceCard extends StatelessWidget {
     final content = AnimatedContainer(
       duration: KaringMotion.standard,
       curve: Curves.easeOutCubic,
+      width: double.infinity,
       decoration: decoration,
       padding: padding,
       child: child,
@@ -259,7 +260,7 @@ class KaringQuickActionTile extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(Icons.chevron_right_rounded, size: 20),
+          if (onTap != null) const Icon(Icons.chevron_right_rounded, size: 20),
         ],
       ),
     );
